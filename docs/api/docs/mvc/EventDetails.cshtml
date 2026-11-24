@@ -1,0 +1,33 @@
+@model EventDto
+@{
+    ViewData["Title"] = Model.Name;
+    var past = Model.Date < DateTime.Now;
+}
+<a asp-action="Events" class="d-block mb-3">&larr; Back to events</a>
+<div class="card">
+    <partial name="_EventImage" model="Model.ImageUrl" />
+    <div class="card-body">
+        <h2>@Model.Name <partial name="_EventBadge" model="Model.EventType" /></h2>
+        <p class="lead">@Model.Description</p>
+        <dl class="row">
+            <dt class="col-sm-3">Date</dt><dd class="col-sm-9">@Model.Date.ToString("dddd, dd MMMM yyyy HH:mm")</dd>
+            <dt class="col-sm-3">Location</dt><dd class="col-sm-9">@Model.Location</dd>
+            <dt class="col-sm-3">Distance</dt><dd class="col-sm-9">@Model.DistanceKm.ToString("0.##") km</dd>
+            <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.CategoryName</dd>
+            <dt class="col-sm-3">Organiser</dt><dd class="col-sm-9">@Model.OrganiserName</dd>
+            <dt class="col-sm-3">Participants</dt><dd class="col-sm-9">@Model.EnrolmentCount enrolled</dd>
+        </dl>
+        @if (Model.IsEnrolled)
+        {
+            <div class="alert alert-success mb-0">You are enrolled in this event. <a asp-action="Enrolments">View my enrolments</a></div>
+        }
+        else if (past)
+        {
+            <div class="alert alert-secondary mb-0">This event has already taken place.</div>
+        }
+        else
+        {
+            <form asp-action="Enrol" asp-route-id="@Model.Id" method="post"><button class="btn btn-primary btn-lg" type="submit">Enrol in this event</button></form>
+        }
+    </div>
+</div>

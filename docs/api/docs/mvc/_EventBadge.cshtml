@@ -1,0 +1,5 @@
+@model EventType
+@{
+    var cls = Model switch { EventType.Run => "bg-danger", EventType.Walk => "bg-success", _ => "bg-primary" };
+}
+<span class="badge @cls">@Model</span>

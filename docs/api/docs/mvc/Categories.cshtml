@@ -1,0 +1,26 @@
+@model List<CategoryDto>
+@{ ViewData["Title"] = "Categories"; }
+<h2 class="mb-3">Event categories</h2>
+<div class="card mb-4"><div class="card-body">
+    <h5>Add a category</h5>
+    <form asp-action="CreateCategory" method="post" class="row g-2">
+        <div class="col-md-4"><input name="Name" class="form-control" placeholder="Name" maxlength="100" required /></div>
+        <div class="col-md-6"><input name="Description" class="form-control" placeholder="Description (optional)" maxlength="300" /></div>
+        <div class="col-md-2"><button type="submit" class="btn btn-primary w-100">Add</button></div>
+    </form>
+</div></div>
+<div class="table-responsive"><table class="table align-middle">
+    <thead><tr><th>Name</th><th>Description</th><th>Events</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var c in Model)
+    {
+        <tr>
+            <td>@c.Name</td><td>@c.Description</td><td>@c.EventCount</td>
+            <td class="text-nowrap">
+                <a class="btn btn-sm btn-outline-secondary" asp-action="EditCategory" asp-route-id="@c.Id">Edit</a>
+                <form asp-action="DeleteCategory" asp-route-id="@c.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this category?');"><button class="btn btn-sm btn-outline-danger" type="submit">Delete</button></form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table></div>

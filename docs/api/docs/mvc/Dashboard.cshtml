@@ -1,0 +1,48 @@
+@model ParticipantDashboardViewModel
+@{
+    ViewData["Title"] = "Participant dashboard";
+    var upcoming = Model.Enrolments.Where(e => e.EventDate >= DateTime.Now).OrderBy(e => e.EventDate).ToList();
+}
+<h2 class="mb-3">Welcome, @User.Identity.Name</h2>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><div class="display-6">@upcoming.Count</div><div>Upcoming events</div></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><div class="display-6">@Model.Enrolments.Count</div><div>Total enrolments</div></div></div></div>
+    <div class="col-md-4"><div class="card text-center"><div class="card-body"><div class="display-6">@Model.Results.Count</div><div>Results recorded</div></div></div></div>
+</div>
+<div class="mb-4">
+    <a class="btn btn-primary" asp-action="Events">Browse events</a>
+    <a class="btn btn-outline-secondary" asp-action="Enrolments">My enrolments</a>
+    <a class="btn btn-outline-secondary" asp-action="Results">My results</a>
+    <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Profile">My profile</a>
+</div>
+<h4>Your next events</h4>
+@if (!upcoming.Any())
+{
+    <p class="text-muted">You are not enrolled in any upcoming events. <a asp-action="Events">Find one now</a>.</p>
+}
+else
+{
+    <ul class="list-group mb-4">
+        @foreach (var e in upcoming.Take(5))
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><a asp-action="EventDetails" asp-route-id="@e.EventId">@e.EventName</a> &middot; @e.EventDate.ToString("dd MMM yyyy HH:mm") &middot; @e.Location</span>
+                <partial name="_EventBadge" model="e.EventType" />
+            </li>
+        }
+    </ul>
+}
+<h4>Recent results</h4>
+@if (!Model.Results.Any())
+{
+    <p class="text-muted">No results yet.</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var r in Model.Results.Take(3))
+        {
+            <li class="list-group-item">@r.EventName &middot; @r.EventDate.ToString("dd MMM yyyy") &middot; <strong>@r.FinishTime</strong>@(r.Position.HasValue ? $" (position {r.Position})" : "")</li>
+        }
+    </ul>
+}

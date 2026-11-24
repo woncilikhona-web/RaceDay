@@ -1,0 +1,9 @@
+@model string
+@if (!string.IsNullOrEmpty(Model))
+{
+    <img src="@Model" alt="Event image" class="event-img" loading="lazy" />
+}
+else
+{
+    <div class="event-img event-img-placeholder">&#127939;</div>
+}

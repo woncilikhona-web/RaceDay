@@ -1,0 +1,35 @@
+@model EventSearchViewModel
+@{ ViewData["Title"] = "Browse events"; }
+<h2 class="mb-3">Browse events</h2>
+<form method="get" asp-action="Events" class="row g-2 mb-4">
+    <div class="col-md-4"><input asp-for="Search" class="form-control" placeholder="Search name, location or description" /></div>
+    <div class="col-md-2">
+        <select asp-for="EventType" class="form-select" asp-items="Html.GetEnumSelectList<EventType>()"><option value="">All types</option></select>
+    </div>
+    <div class="col-md-3">
+        <select asp-for="CategoryId" class="form-select" asp-items="@(new SelectList(Model.Categories, "Id", "Name"))"><option value="">All categories</option></select>
+    </div>
+    <div class="col-md-2 form-check pt-2 ps-5"><input asp-for="UpcomingOnly" class="form-check-input" /><label asp-for="UpcomingOnly" class="form-check-label">Upcoming only</label></div>
+    <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">Go</button></div>
+</form>
+@if (!Model.Events.Any())
+{
+    <div class="alert alert-info">No events match your search.</div>
+}
+<div class="row g-3">
+    @foreach (var e in Model.Events)
+    {
+        <div class="col-md-4">
+            <div class="card h-100">
+                <partial name="_EventImage" model="e.ImageUrl" />
+                <div class="card-body">
+                    <h5 class="card-title">@e.Name <partial name="_EventBadge" model="e.EventType" /></h5>
+                    <p class="card-text text-muted mb-1">@e.Date.ToString("dd MMM yyyy HH:mm") &middot; @e.Location</p>
+                    <p class="card-text mb-1">@e.DistanceKm.ToString("0.##") km &middot; @e.CategoryName</p>
+                    @if (e.IsEnrolled) { <span class="badge bg-success">You are enrolled</span> }
+                </div>
+                <div class="card-footer bg-transparent"><a class="btn btn-sm btn-outline-primary" asp-action="EventDetails" asp-route-id="@e.Id">View details</a></div>
+            </div>
+        </div>
+    }
+</div>

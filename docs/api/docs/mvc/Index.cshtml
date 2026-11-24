@@ -1,0 +1,11 @@
+@{ ViewData["Title"] = "Welcome"; }
+<div class="p-5 mb-4 bg-light rounded-3 text-center">
+    <h1 class="display-5 fw-bold">&#127939; RaceDay</h1>
+    <p class="lead">Discover and enrol in runs, walks and cycling events &mdash; or organise your own and record the results.</p>
+    <a class="btn btn-primary btn-lg me-2" asp-controller="Account" asp-action="Register">Create an account</a>
+    <a class="btn btn-outline-secondary btn-lg" asp-controller="Account" asp-action="Login">Log in</a>
+</div>
+<div class="row text-center">
+    <div class="col-md-6"><div class="card h-100"><div class="card-body"><h5>Participants</h5><p>Browse events, enrol, track your enrolments and view your results.</p></div></div></div>
+    <div class="col-md-6"><div class="card h-100"><div class="card-body"><h5>Organisers</h5><p>Create and manage events, manage categories, see who is enrolled and record results.</p></div></div></div>
+</div>

@@ -1,0 +1,16 @@
+@model ResultFormViewModel
+@{ ViewData["Title"] = "Record result"; }
+<div class="row justify-content-center"><div class="col-md-6">
+    <h2 class="mb-1">Record result</h2>
+    <p class="text-muted">@Model.ParticipantName &middot; @Model.EventName</p>
+    <form asp-action="RecordResult" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input type="hidden" asp-for="EnrolmentId" /><input type="hidden" asp-for="EventId" />
+        <input type="hidden" asp-for="EventName" /><input type="hidden" asp-for="ParticipantName" />
+        <div class="mb-3"><label asp-for="FinishTime" class="form-label"></label><input asp-for="FinishTime" class="form-control" placeholder="01:45:30" /><span asp-validation-for="FinishTime" class="text-danger"></span></div>
+        <div class="mb-3"><label asp-for="Position" class="form-label"></label><input asp-for="Position" type="number" min="1" class="form-control" /><span asp-validation-for="Position" class="text-danger"></span></div>
+        <div class="mb-3"><label asp-for="Notes" class="form-label"></label><textarea asp-for="Notes" class="form-control" rows="2"></textarea><span asp-validation-for="Notes" class="text-danger"></span></div>
+        <button type="submit" class="btn btn-primary">Save result</button>
+        <a asp-action="Participants" asp-route-id="@Model.EventId" class="btn btn-link">Cancel</a>
+    </form>
+</div></div>
