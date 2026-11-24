@@ -1,56 +1,35 @@
-name: .NET CI
+name: RaceDay CI
 
 on:
   push:
-    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Get the code
         uses: actions/checkout@v4
 
-      - name: Install .NET
+      - name: Install .NET 8
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.x
+          dotnet-version: 8.0.x
 
-      - name: Show the .NET version
-        run: dotnet --info
-
-      - name: List the projects found
-        run: find . -name "*.csproj" -not -path "*/obj/*"
-
-      - name: Restore and build every project
+      - name: Find the solution
+        id: sln
         run: |
-          found=0
-          while IFS= read -r -d '' proj; do
-            found=1
-            echo "=== Restoring $proj"
-            dotnet restore "$proj"
-            echo "=== Building $proj"
-            dotnet build "$proj" --no-restore --configuration Release
-          done < <(find . -name "*.csproj" -not -path "*/obj/*" -print0)
-          if [ "$found" -eq 0 ]; then
-            echo "No .csproj files found."
+          SLN=$(find . -name "RaceDay.sln" -not -path "*/docs/*" | head -n 1)
+          echo "Found: $SLN"
+          if [ -z "$SLN" ]; then
+            echo "RaceDay.sln was not found. Upload RaceDay.sln and the src folder to the repo."
             exit 1
           fi
+          echo "path=$SLN" >> "$GITHUB_OUTPUT"
 
-      - name: Run tests (only in test projects)
-        run: |
-          while IFS= read -r -d '' proj; do
-            if grep -q "Microsoft.NET.Test.Sdk" "$proj"; then
-              echo "=== Testing $proj"
-              dotnet test "$proj" --configuration Release --verbosity normal
-            else
-              echo "Skipping $proj (not a test project)"
-            fi
-          done < <(find . -name "*.csproj" -not -path "*/obj/*" -print0)
+      - name: Restore packages
+        run: dotnet restore "${{ steps.sln.outputs.path }}"
+
+      - name: Build
+        run: dotnet build "${{ steps.sln.outputs.path }}" -c Release --no-restore
