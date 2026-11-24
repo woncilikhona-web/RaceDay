@@ -1,47 +1,56 @@
-name: RaceDay CI
+name: .NET CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
   pull_request:
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Get the code
         uses: actions/checkout@v4
 
-      - name: Install .NET 8
+      - name: Install .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
 
-      - name: Restore packages
-        run: dotnet restore RaceDay.sln
+      - name: Show the .NET version
+        run: dotnet --info
 
-      - name: Build
-        run: dotnet build RaceDay.sln -c Release --no-restore
+      - name: List the projects found
+        run: find . -name "*.csproj" -not -path "*/obj/*"
 
-      - name: Publish API
-        run: dotnet publish src/RaceDay.Api/RaceDay.Api.csproj -c Release -o publish/api --no-build
+      - name: Restore and build every project
+        run: |
+          found=0
+          while IFS= read -r -d '' proj; do
+            found=1
+            echo "=== Restoring $proj"
+            dotnet restore "$proj"
+            echo "=== Building $proj"
+            dotnet build "$proj" --no-restore --configuration Release
+          done < <(find . -name "*.csproj" -not -path "*/obj/*" -print0)
+          if [ "$found" -eq 0 ]; then
+            echo "No .csproj files found."
+            exit 1
+          fi
 
-      - name: Publish MVC
-        run: dotnet publish src/RaceDay.Web/RaceDay.Web.csproj -c Release -o publish/web --no-build
-
-      - name: Save the published files
-        uses: actions/upload-artifact@v4
-        with:
-          name: raceday-publish
-          path: publish
-
-  docker:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build API Docker image
-        run: docker build -f src/RaceDay.Api/Dockerfile -t raceday-api:ci .
-      - name: Build MVC Docker image
-        run: docker build -f src/RaceDay.Web/Dockerfile -t raceday-web:ci .
+      - name: Run tests (only in test projects)
+        run: |
+          while IFS= read -r -d '' proj; do
+            if grep -q "Microsoft.NET.Test.Sdk" "$proj"; then
+              echo "=== Testing $proj"
+              dotnet test "$proj" --configuration Release --verbosity normal
+            else
+              echo "Skipping $proj (not a test project)"
+            fi
+          done < <(find . -name "*.csproj" -not -path "*/obj/*" -print0)
