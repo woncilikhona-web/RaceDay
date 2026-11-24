@@ -17,19 +17,81 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Find the solution
-        id: sln
+      - name: Rebuild the project folders from the uploaded files
         run: |
-          SLN=$(find . -name "RaceDay.sln" -not -path "*/docs/*" | head -n 1)
-          echo "Found: $SLN"
-          if [ -z "$SLN" ]; then
-            echo "RaceDay.sln was not found. Upload RaceDay.sln and the src folder to the repo."
-            exit 1
-          fi
-          echo "path=$SLN" >> "$GITHUB_OUTPUT"
+          python3 - <<'PY'
+          import os, shutil
+
+          API = "docs/api"
+          MVC = "docs/api/docs/mvc"
+          OUT = "build"
+          missing = []
+
+          def put(srcdir, name, dest):
+              src = os.path.join(srcdir, name)
+              if not os.path.exists(src):
+                  missing.append(src)
+                  return
+              dst = os.path.join(OUT, dest)
+              os.makedirs(os.path.dirname(dst), exist_ok=True)
+              shutil.copyfile(src, dst)
+
+          # solution + shared project
+          put(API, "RaceDay.sln", "RaceDay.sln")
+          put(API, "RaceDay.Shared.csproj", "src/RaceDay.Shared/RaceDay.Shared.csproj")
+          put(API, "Contracts.cs", "src/RaceDay.Shared/Contracts.cs")
+
+          # API project
+          A = "src/RaceDay.Api/"
+          for n in ["RaceDay.Api.csproj", "Program.cs", "appsettings.json", "appsettings.Development.json", "Dockerfile"]:
+              put(API, n, A + n)
+          put(API, "launchSettings.json", A + "Properties/launchSettings.json")
+          for n in ["ApiControllerBase", "AuthController", "CategoriesController", "EnrolmentsController",
+                    "EventsController", "FilesController", "ProfileController", "ResultsController"]:
+              put(API, n + ".cs", A + "Controllers/" + n + ".cs")
+          for n in ["DbInitializer", "RaceDayDbContext"]:
+              put(API, n + ".cs", A + "Data/" + n + ".cs")
+          put(API, "Entities.cs", A + "Models/Entities.cs")
+          for n in ["FileStorage", "Mapping", "PasswordService", "TokenService"]:
+              put(API, n + ".cs", A + "Services/" + n + ".cs")
+          for n in ["AuthSetup", "SwaggerSetup"]:
+              put(API, n + ".cs", A + "Setup/" + n + ".cs")
+
+          # MVC project
+          W = "src/RaceDay.Web/"
+          for n in ["RaceDay.Web.csproj", "Program.cs", "appsettings.json", "Dockerfile"]:
+              put(MVC, n, W + n)
+          put(MVC, "launchSettings.json", W + "Properties/launchSettings.json")
+          for n in ["AccountController", "AppController", "HomeController", "OrganiserController", "ParticipantController"]:
+              put(MVC, n + ".cs", W + "Controllers/" + n + ".cs")
+          put(MVC, "ViewModels.cs", W + "Models/ViewModels.cs")
+          put(MVC, "ApiClient.cs", W + "Services/ApiClient.cs")
+          views = {
+              "Account": ["AccessDenied", "Login", "Profile", "Register"],
+              "Home": ["Error", "Index"],
+              "Organiser": ["Categories", "Dashboard", "EditCategory", "EventForm", "Events", "Participants", "RecordResult"],
+              "Participant": ["Dashboard", "Enrolments", "EventDetails", "Events", "Results"],
+              "Shared": ["_EventBadge", "_EventImage", "_Layout"],
+              "": ["_ViewImports", "_ViewStart"],
+          }
+          for folder, names in views.items():
+              for n in names:
+                  put(MVC, n + ".cshtml", W + "Views/" + (folder + "/" if folder else "") + n + ".cshtml")
+
+          print("Rebuilt tree:")
+          for r, d, f in os.walk(OUT):
+              for x in sorted(f):
+                  print("  " + os.path.join(r, x))
+          if missing:
+              print("WARNING - files not found in the repo:")
+              for m in missing:
+                  print("  " + m)
+          PY
 
       - name: Restore packages
-        run: dotnet restore "${{ steps.sln.outputs.path }}"
+        working-directory: build
+        run: dotnet restore RaceDay.sln
 
       - name: Build
-        run: dotnet build "${{ steps.sln.outputs.path }}" -c Release --no-restore
+        working-directory: build
+        run: dotnet build RaceDay.sln -c Release --no-restore
